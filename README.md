@@ -39,9 +39,12 @@
 ## Quick Start
 
 ```bash
-# Clone and build
-git clone https://github.com/your-username/CLOK.git
-cd CLOK
+# Install with Homebrew (recommended)
+brew install raitama1122/tap/clok
+
+# Or clone and build from source
+git clone https://github.com/raitama1122/clok.git
+cd clok
 swift build -c release
 
 # Set your API key
