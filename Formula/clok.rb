@@ -6,7 +6,7 @@ class Clok < Formula
   homepage "https://github.com/raitama1122/clok"
   url "https://github.com/raitama1122/clok/archive/refs/heads/main.tar.gz"
   version "1.0.0"
-  sha256 "c3356d1ac0514345cf73d4093f748dee39ee7948963de949800d496e1f1cda2b"
+  sha256 "df0fccb1554fd5d6cf26801f012fed2b646ba4ec208943a8dcc6551b05f041e4"
   license "MIT"
   head "https://github.com/raitama1122/clok.git", branch: "main"
 
