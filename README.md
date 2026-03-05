@@ -39,34 +39,34 @@
 ## Quick Start
 
 ```bash
-# Install with Homebrew (recommended)
-brew install raitama1122/tap/clok
-
-# Or clone and build from source
-git clone https://github.com/raitama1122/clok.git
-cd clok
-swift build -c release
-
-# Set your API key
+# Set your API key (required)
 export ANTHROPIC_API_KEY=your-key-here
 
-# Run
-.build/release/clok
+# Run CLOK (after installing via Homebrew or building from source)
+clok
 ```
 
 ## Installation
 
+### Install via Homebrew (recommended)
+
+```bash
+brew tap raitama1122/clok https://github.com/raitama1122/clok
+brew install raitama1122/clok/clok
+```
+
 ### Build from source
 
 ```bash
-cd CLOK
+git clone https://github.com/raitama1122/clok.git
+cd clok
 swift build -c release
 ```
 
 The binary will be at `.build/release/clok`. Add it to your `PATH` or create an alias:
 
 ```bash
-alias clok='/path/to/CLOK/.build/release/clok'
+alias clok='/path/to/clok/.build/release/clok'
 ```
 
 ### Configuration
