@@ -59,9 +59,13 @@ public class LineNoise {
     let currentTerm: String
 
     var tempBuf: String?
-    
+
     let inputFile: Int32
     let outputFile: Int32
+
+    // Tracks the terminal row (relative to the prompt row) where the cursor currently sits.
+    // Used by refreshLine to move back up to the prompt row before redrawing when text wraps.
+    private var lastCursorRow: Int = 0
     
     // MARK: - Public Interface
     
@@ -348,25 +352,73 @@ public class LineNoise {
     
     // MARK: - Buffer manipulation
     internal func refreshLine(editState: EditState) throws {
-        var commandBuf = "\r"                // Return to beginning of the line
+        let promptLen = Self.promptDisplayLength(editState.prompt)
+        let numCols = getNumCols()
+
+        var commandBuf = ""
+
+        // Move back to the prompt row. lastCursorRow tracks the actual terminal cursor row
+        // (relative to the prompt row), accounting for wrap-pending state.
+        if lastCursorRow > 0 {
+            commandBuf += AnsiCodes.cursorUp(lastCursorRow)
+        }
+        commandBuf += "\r"
         commandBuf += editState.prompt
         commandBuf += editState.buffer
         commandBuf += try refreshHints(editState: editState)
-        commandBuf += AnsiCodes.eraseRight
-        
-        // Put the cursor in the original position
+
+        let contentTotal = promptLen + editState.buffer.count
+        let contentRow = contentTotal / numCols
+
+        if contentTotal > 0 && contentTotal % numCols == 0 {
+            // The buffer ends exactly at a terminal row boundary — cursor is in wrap-pending state
+            // (still on the row that was just filled, not yet on the next row).
+            // Force-commit the wrap by writing a space (which triggers the pending wrap),
+            // then erase it along with any leftover content from a previously longer buffer.
+            commandBuf += " "              // triggers wrap → cursor lands on next row
+            commandBuf += "\r"             // go to col 0 of that row
+            commandBuf += AnsiCodes.eraseRight  // erase the space + any leftover content
+            // Cursor is now at (contentRow, 0)
+        } else {
+            commandBuf += AnsiCodes.eraseRight  // erase any leftover content after the buffer
+        }
+
+        // Position the cursor at editState.cursorPosition.
+        let cursorTotal = promptLen + editState.cursorPosition
+        let targetRow = cursorTotal / numCols
+        let targetCol = cursorTotal % numCols
+
+        // Current cursor row after writing content is contentRow in both cases above.
+        if contentRow > targetRow {
+            commandBuf += AnsiCodes.cursorUp(contentRow - targetRow)
+        }
         commandBuf += "\r"
-        let promptLen = Self.promptDisplayLength(editState.prompt)
-        commandBuf += AnsiCodes.cursorForward(editState.cursorPosition + promptLen)
-        
+        if targetCol > 0 {
+            commandBuf += AnsiCodes.cursorForward(targetCol)
+        }
+
+        lastCursorRow = targetRow
+
         try output(text: commandBuf)
     }
     
     internal func insertCharacter(_ char: Character, editState: EditState) throws {
         editState.insertCharacter(char)
-        
+
         if editState.location == editState.buffer.endIndex {
             try output(character: char)
+            let promptLen = Self.promptDisplayLength(editState.prompt)
+            let numCols = getNumCols()
+            let totalPos = promptLen + editState.cursorPosition
+            // When totalPos is an exact multiple of numCols, the char we just output filled the
+            // last column of a row. Most terminals enter "wrap-pending" state: the cursor stays
+            // on that row (not yet moved to the next row) until the next character is written.
+            // In that case the actual terminal cursor row is totalPos/numCols - 1, not totalPos/numCols.
+            if totalPos > 0 && totalPos % numCols == 0 {
+                lastCursorRow = totalPos / numCols - 1
+            } else {
+                lastCursorRow = totalPos / numCols
+            }
         } else {
             try refreshLine(editState: editState)
         }
@@ -725,7 +777,8 @@ public class LineNoise {
     
     internal func editLine(prompt: String) throws -> String {
         try output(text: prompt)
-        
+        lastCursorRow = 0
+
         let editState: EditState = EditState(prompt: prompt)
         
         while true {

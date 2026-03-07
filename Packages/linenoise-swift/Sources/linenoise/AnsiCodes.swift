@@ -54,6 +54,10 @@ public struct AnsiCodes {
     public static func cursorForward(_ columns: Int) -> String {
         return escapeCode("\(columns)C")
     }
+
+    public static func cursorUp(_ rows: Int) -> String {
+        return escapeCode("\(rows)A")
+    }
     
     public static func termColor(color: Int, bold: Bool) -> String {
         return escapeCode("\(color);\(bold ? 1 : 0);49m")
