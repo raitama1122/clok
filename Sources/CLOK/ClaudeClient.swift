@@ -98,34 +98,35 @@ final class ClaudeClient {
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
         
         var allMessages = messages
-        var maxToolRounds = 5
+        var maxToolRounds = 10
         var finalText = ""
-        
+        var hitToolLimit = false
+
         while maxToolRounds > 0 {
             maxToolRounds -= 1
-            
+
             progress?.onThinking?()
-            
+
             var body = requestBody
             body["messages"] = buildMessages(allMessages)
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            
+
             let (data, response) = try await URLSession.shared.data(for: request)
-            
+
             guard let http = response as? HTTPURLResponse else {
                 throw ClaudeError.invalidResponse
             }
-            
+
             if http.statusCode != 200 {
                 let errorBody = String(data: data, encoding: .utf8) ?? "Unknown"
                 throw ClaudeError.apiError(statusCode: http.statusCode, body: errorBody)
             }
-            
+
             let decoded = try JSONDecoder().decode(APIResponse.self, from: data)
-            
+
             var assistantContent: [[String: Any]] = []
             var toolResults: [[String: Any]] = []
-            
+
             for block in decoded.content {
                 switch block {
                 case .text(let t):
@@ -149,17 +150,37 @@ final class ClaudeClient {
                     ])
                 }
             }
-            
+
             allMessages.append((role: "assistant", content: assistantContent))
-            
+
             if decoded.stopReason == "tool_use", !toolResults.isEmpty {
                 allMessages.append((role: "user", content: toolResults))
+                if maxToolRounds == 0 { hitToolLimit = true }
                 progress?.onContinuing?()
             } else {
                 break
             }
         }
-        
+
+        // If we ran out of tool rounds before Claude produced a final answer, force one
+        if hitToolLimit || finalText.isEmpty {
+            progress?.onContinuing?()
+            var finalBody = requestBody
+            finalBody.removeValue(forKey: "tools")
+            finalBody["messages"] = buildMessages(allMessages)
+            request.httpBody = try JSONSerialization.data(withJSONObject: finalBody)
+
+            let (data, _) = try await URLSession.shared.data(for: request)
+            if let decoded = try? JSONDecoder().decode(APIResponse.self, from: data) {
+                for block in decoded.content {
+                    if case .text(let t) = block, !t.isEmpty {
+                        finalText = t
+                        break
+                    }
+                }
+            }
+        }
+
         return finalText
     }
     
