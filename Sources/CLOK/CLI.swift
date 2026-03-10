@@ -245,16 +245,23 @@ final class CLI {
         }
 
         // User profile updates
+        var profileChanged = false
         if let name = extraction.profile.name, !name.isEmpty {
-            memory.userProfile.name = name
+            memory.userProfile.name = name; profileChanged = true
         }
-        memory.userProfile.mergePreferences(extraction.profile.preferences)
-        memory.userProfile.mergeExpertise(extraction.profile.expertise)
-        memory.userProfile.mergeProjects(extraction.profile.activeProjects)
-        if !extraction.profile.preferences.isEmpty || !extraction.profile.expertise.isEmpty
-            || !extraction.profile.activeProjects.isEmpty || extraction.profile.name != nil {
-            memory.userProfile.updatedAt = Date()
+        if let location = extraction.profile.location, !location.isEmpty {
+            memory.userProfile.location = location; profileChanged = true
         }
+        if !extraction.profile.preferences.isEmpty {
+            memory.userProfile.mergePreferences(extraction.profile.preferences); profileChanged = true
+        }
+        if !extraction.profile.expertise.isEmpty {
+            memory.userProfile.mergeExpertise(extraction.profile.expertise); profileChanged = true
+        }
+        if !extraction.profile.activeProjects.isEmpty {
+            memory.userProfile.mergeProjects(extraction.profile.activeProjects); profileChanged = true
+        }
+        if profileChanged { memory.userProfile.updatedAt = Date() }
 
         memory.persist()
 
@@ -447,13 +454,17 @@ final class CLI {
             memory.userProfile.name = String(arg.dropFirst(5)).trimmingCharacters(in: .whitespaces)
             memory.persist()
             print(Style.green("  ✓ Name updated."))
+        } else if arg.lowercased().hasPrefix("location ") {
+            memory.userProfile.location = String(arg.dropFirst(9)).trimmingCharacters(in: .whitespaces)
+            memory.persist()
+            print(Style.green("  ✓ Location updated."))
         } else if arg.lowercased().hasPrefix("pref ") {
             let pref = String(arg.dropFirst(5)).trimmingCharacters(in: .whitespaces)
             memory.userProfile.mergePreferences([pref])
             memory.persist()
             print(Style.green("  ✓ Preference added."))
         } else {
-            print("Usage: profile | profile name <name> | profile pref <preference>")
+            print("Usage: profile | profile name <name> | profile location <city> | profile pref <preference>")
         }
     }
 

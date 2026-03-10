@@ -68,11 +68,12 @@ final class ClaudeClient {
 
         struct ProfileUpdate: Codable {
             let name: String?
+            let location: String?
             let preferences: [String]
             let expertise: [String]
             let activeProjects: [String]
             enum CodingKeys: String, CodingKey {
-                case name, preferences, expertise
+                case name, location, preferences, expertise
                 case activeProjects = "active_projects"
             }
         }
@@ -236,20 +237,22 @@ final class ClaudeClient {
           "episode_outcome": "",
           "episode_tags": [],
           "update_lst": false,
-          "profile": { "name": null, "preferences": [], "expertise": [], "active_projects": [] }
+          "profile": { "name": null, "location": null, "preferences": [], "expertise": [], "active_projects": [] }
         }
 
         Rules:
-        - facts: stable, reusable facts about the user or their environment (empty array if none)
+        - facts: contextual/transient facts worth remembering (empty array if nothing notable)
         - wm_bullets: updated working-memory bullets if the user's focus clearly changed, null otherwise
         - episode_summary: one sentence — what the user was trying to do
         - episode_outcome: what was achieved, decided, or produced (empty string if nothing notable)
         - episode_tags: 1–3 lowercase topic tags (e.g. "coding", "writing", "research")
         - update_lst: true only if something milestone-worthy happened
-        - profile.name: user's name if mentioned, null otherwise
-        - profile.preferences: new communication/style preferences discovered
-        - profile.expertise: skills/domains the user demonstrated knowledge of
+        - profile.name: user's real name if they mentioned it, null otherwise
+        - profile.location: city and/or country if the user mentioned where they live or are based, null otherwise
+        - profile.preferences: new communication or style preferences discovered (e.g. "prefers concise answers")
+        - profile.expertise: skills or domains the user demonstrated knowledge of
         - profile.active_projects: project names or files the user is actively working on
+        IMPORTANT: stable personal facts (name, location) belong in profile, NOT in facts[]
         """
 
         guard let raw = await complete(systemPrompt: system, userMessage: prompt) else { return nil }

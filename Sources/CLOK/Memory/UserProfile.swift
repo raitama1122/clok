@@ -4,16 +4,18 @@ import Foundation
 /// Separate from SemanticMemory (which is for transient/contextual facts)
 struct UserProfile: Codable {
     var name: String?
+    var location: String?       // city, country
     var timezone: String?
     var preferences: [String]   // communication style, verbosity, tone
     var expertise: [String]     // known skills / domains
     var activeProjects: [String]
     var updatedAt: Date
 
-    init(name: String? = nil, timezone: String? = nil,
+    init(name: String? = nil, location: String? = nil, timezone: String? = nil,
          preferences: [String] = [], expertise: [String] = [],
          activeProjects: [String] = [], updatedAt: Date = Date()) {
         self.name = name
+        self.location = location
         self.timezone = timezone
         self.preferences = preferences
         self.expertise = expertise
@@ -22,12 +24,14 @@ struct UserProfile: Codable {
     }
 
     var isEmpty: Bool {
-        name == nil && preferences.isEmpty && expertise.isEmpty && activeProjects.isEmpty
+        name == nil && location == nil && preferences.isEmpty && expertise.isEmpty && activeProjects.isEmpty
     }
 
     func formatted() -> String {
         var lines: [String] = []
         if let name = name { lines.append("Name: \(name)") }
+        if let location = location { lines.append("Location: \(location)") }
+        if let timezone = timezone { lines.append("Timezone: \(timezone)") }
         if !preferences.isEmpty { lines.append("Preferences: \(preferences.joined(separator: ", "))") }
         if !expertise.isEmpty { lines.append("Expertise: \(expertise.joined(separator: ", "))") }
         if !activeProjects.isEmpty { lines.append("Active projects: \(activeProjects.joined(separator: ", "))") }
