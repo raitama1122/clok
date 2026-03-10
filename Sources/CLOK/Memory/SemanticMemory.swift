@@ -38,6 +38,14 @@ struct SemanticMemory: Codable {
         self.maxFacts = maxFacts
     }
 
+    /// Remove facts whose text contains any of the given substrings (case-insensitive)
+    mutating func removeFactsContaining(_ keywords: [String]) {
+        facts = facts.filter { fact in
+            let lower = fact.fact.lowercased()
+            return !keywords.contains { lower.contains($0.lowercased()) }
+        }
+    }
+
     mutating func add(fact: String, confidence: Double = 1.0) {
         if let idx = facts.firstIndex(where: { $0.fact.lowercased() == fact.lowercased() }) {
             facts[idx].reinforce()

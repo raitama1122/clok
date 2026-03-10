@@ -244,13 +244,19 @@ final class CLI {
             )
         }
 
-        // User profile updates
+        // User profile updates — purge stale SM facts when profile fields change
         var profileChanged = false
         if let name = extraction.profile.name, !name.isEmpty {
-            memory.userProfile.name = name; profileChanged = true
+            memory.userProfile.name = name
+            memory.semanticMemory.removeFactsContaining(["name is", "named ", "called ", "my name"])
+            profileChanged = true
         }
         if let location = extraction.profile.location, !location.isEmpty {
-            memory.userProfile.location = location; profileChanged = true
+            var locationKeywords = ["lives in", "live in", "living in", "based in", "located in", "moved to"]
+            if let old = memory.userProfile.location { locationKeywords.append(old.lowercased()) }
+            memory.userProfile.location = location
+            memory.semanticMemory.removeFactsContaining(locationKeywords)
+            profileChanged = true
         }
         if !extraction.profile.preferences.isEmpty {
             memory.userProfile.mergePreferences(extraction.profile.preferences); profileChanged = true
