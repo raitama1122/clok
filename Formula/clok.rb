@@ -1,8 +1,8 @@
 class Clok < Formula
   desc "LLM-powered CLI with persistent memory (Claude)"
   homepage "https://github.com/raitama1122/clok"
-  url "https://github.com/raitama1122/clok/archive/refs/tags/v1.0.2.tar.gz"
-  sha256 "d42af5959b4bf4ad3a47e8c52e4b408347a09e9d772638672363818216ffee86"
+  url "https://github.com/raitama1122/clok/archive/refs/tags/v1.0.3.tar.gz"
+  sha256 "4f0fdc1691be2e58cce421b6041a4484568ea1e6bb3edd6ba153e276d4a7c959"
   license "MIT"
   head "https://github.com/raitama1122/clok.git", branch: "main"
 
