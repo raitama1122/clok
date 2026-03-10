@@ -70,12 +70,13 @@ enum ToolDefinitions {
           },
           {
             "name": "file_read",
-            "description": "Read file contents. Use for small files. Returns first N lines.",
+            "description": "Read file contents. Returns up to max_lines lines starting at start_line. Use start_line to paginate through large files — the response tells you how many lines remain and what start_line to use next.",
             "input_schema": {
               "type": "object",
               "properties": {
                 "path": {"type": "string", "description": "File path"},
-                "max_lines": {"type": "integer", "description": "Max lines to return (default 100)"}
+                "start_line": {"type": "integer", "description": "First line to read, 1-indexed (default 1)"},
+                "max_lines": {"type": "integer", "description": "Max lines to return (default 150)"}
               },
               "required": ["path"]
             }

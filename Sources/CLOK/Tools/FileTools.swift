@@ -225,27 +225,31 @@ enum FileTools {
     
     private static func readFile(_ input: [String: Any]) -> String {
         let path = input["path"] as? String ?? ""
-        let maxLines = input["max_lines"] as? Int ?? 100
-        
+        let maxLines = input["max_lines"] as? Int ?? 150
+        let startLine = max(1, input["start_line"] as? Int ?? 1)
+
         guard !path.isEmpty else { return "Error: path is required" }
-        
+
         let url = resolvePath(path)
         guard let fileURL = url else { return "Error: Invalid path '\(path)'" }
-        
+
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: fileURL.path, isDirectory: &isDir), !isDir.boolValue else {
             return "Error: Not a file: \(path)"
         }
-        
+
         guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else {
             return "Error: Could not read file (binary or permission denied)"
         }
-        
+
         let lines = content.components(separatedBy: .newlines)
-        let display = Array(lines.prefix(maxLines))
-        var result = display.joined(separator: "\n")
-        if lines.count > maxLines {
-            result += "\n... (\(lines.count - maxLines) more lines)"
+        let total = lines.count
+        let from = min(startLine - 1, total)
+        let slice = Array(lines[from...].prefix(maxLines))
+        let endLine = from + slice.count
+        var result = "Lines \(from + 1)-\(endLine) of \(total):\n" + slice.joined(separator: "\n")
+        if endLine < total {
+            result += "\n... (\(total - endLine) more lines, use start_line=\(endLine + 1) to continue)"
         }
         return result
     }
