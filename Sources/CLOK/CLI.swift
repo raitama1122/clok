@@ -75,16 +75,21 @@ final class CLI {
             print()
         }
 
-        let prompt = s.brightCyan("clok") + s.brightMagenta("> ") + s.reset
+        let prompt    = s.brightCyan("clok") + s.brightMagenta("> ") + s.reset
+        let setPrompt = s.yellow("set") + s.dim(":") + s.brightCyan("clok") + s.brightMagenta("> ") + s.reset
+
         while true {
+            let activePrompt = inSettingsMenu ? setPrompt : prompt
             let input: String?
-            do { input = try lineNoise.getLine(prompt: prompt) } catch { break }
+            do { input = try lineNoise.getLine(prompt: activePrompt) } catch { break }
             let trimmed = input?.trimmingCharacters(in: .whitespaces) ?? ""
             guard !trimmed.isEmpty else { continue }
             if pendingConfirmReset {
+                print()
                 handleConfirmReset(trimmed)
             } else if inSettingsMenu {
                 lineNoise.addHistory(trimmed)
+                print() // ensure clean line after raw-mode input before output
                 if handleSettingsChoice(trimmed) { break }
             } else {
                 lineNoise.addHistory(trimmed)
@@ -291,15 +296,21 @@ final class CLI {
     private func handleSettingsChoice(_ input: String) -> Bool {
         let choice = input.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         switch choice {
-        case "1", "tools":   Settings.viewTools()
-        case "2", "mem", "memory": Settings.viewMemorySummary(memory)
+        case "1", "tools":
+            Settings.viewTools()
+        case "2", "mem", "memory":
+            Settings.viewMemorySummary(memory)
         case "3", "reset":
             inSettingsMenu = false
             pendingConfirmReset = true
-            print()
             print(Style.yellow("  ⚠ This will delete ALL memory. Continue? ") + Style.dim("[y/N]: "))
-        case "4", "back", "quit", "q": inSettingsMenu = false
-        default: print(Style.yellow("  ? Unknown option. Enter 1–4 or: tools, mem, reset, back"))
+        case "4", "back", "b", "quit", "q", "exit":
+            inSettingsMenu = false
+            print(Style.dim("  Exited settings."))
+        default:
+            // Unknown input — exit settings so the user isn't trapped
+            inSettingsMenu = false
+            print(Style.dim("  Exited settings. (use 'setting' to return)"))
         }
         return false
     }
